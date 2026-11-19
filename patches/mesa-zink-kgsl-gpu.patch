@@ -1,0 +1,28 @@
+diff --git a/src/gallium/drivers/zink/zink_screen.c b/src/gallium/drivers/zink/zink_screen.c
+index a58378b..31d90bc 100644
+--- a/src/gallium/drivers/zink/zink_screen.c
++++ b/src/gallium/drivers/zink/zink_screen.c
+@@ -1835,7 +1835,7 @@ zink_get_cpu_device_type(const struct zink_screen *screen, uint32_t pdev_count,
+          return i;
+    }
+ 
+-   mesa_loge("ZINK: CPU device requested but none found!");
++   mesa_logw("ZINK: CPU device requested but none found");
+ 
+    return -1;
+ }
+@@ -1895,8 +1895,13 @@ choose_pdev(struct zink_screen *screen, int64_t dev_major, int64_t dev_minor, ui
+ 
+       if (adapter_luid)
+          idx = zink_match_adapter_luid(screen, pdev_count, pdevs, adapter_luid);
+-      else if (cpu)
++      else if (cpu) {
+          idx = zink_get_cpu_device_type(screen, pdev_count, pdevs);
++         /* Android/KGSL: no DRM node, so EGL surfaceless reaches zink through the
++          * software path; take the GPU when there is no CPU device. */
++         if (idx < 0 && pdev_count == 1)
++            idx = 0;
++      }
+       else
+          idx = zink_get_display_device(screen, pdev_count, pdevs, dev_major,
+                                        dev_minor);
